@@ -88,3 +88,16 @@ class Plotter:
 
     def showCombined(self, mode):
         self.Combined.getPlot(mode).show()
+
+    def getAll(self):
+        algorithms = {}
+        algorithms["base"] = self.BaseGraph.getPlot()
+        algorithms["kmeans"] = self.kmeans.getPlot()
+        algorithms["spectral"] = self.spectral.getPlot()
+        algorithms["connected"] = self.cc.getPlot()
+        algorithms["kmeans+spectra"] = self.Combined.getPlot("kmeans+spectral")
+        algorithms["connected+kmeans"] = self.Combined.getPlot("kmeans+connected")
+        algorithms["connected+spectral"] = self.Combined.getPlot("spectral+connected")
+        algorithms["connected+kmeans+spectral"] = self.Combined.getPlot("kmeans+spectral+connected")
+        return algorithms
+
