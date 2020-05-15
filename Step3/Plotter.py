@@ -100,4 +100,3 @@ class Plotter:
         algorithms["connected+spectral"] = self.Combined.getPlot("spectral+connected")
         algorithms["connected+kmeans+spectral"] = self.Combined.getPlot("kmeans+spectral+connected")
         return algorithms
-

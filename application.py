@@ -1,24 +1,19 @@
 from flask import Flask, session, request
-from flask_session import Session
 from flask import jsonify
-from tempfile import mkdtemp
 import networkx
 from gensim.models import KeyedVectors
 from gensim.test.utils import get_tmpfile
 from networkx.readwrite import json_graph
 import matplotlib.pyplot as plt
 from node2vec import Node2Vec
-
 from Step3 import Plotter
+import os.path
 
+all_algorithms =["base","kmeans","spectral","connected","kmeans+spectra","kmeans+spectral",
+                 "connected+kmeans","kmeans+connected","connected+spectral",
+                 "spectral+connected","connected+kmeans+spectral"]
 
 app = Flask(__name__)
-app.config["SESSION_FILE_DIR"] = mkdtemp()
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
-
-app.secret_key = "super secret key"
 
 # Zvi Mints And Eilon Tsadok
 #=============================================== / route ================================================#
@@ -65,7 +60,6 @@ def load(dataset):
     networkx.draw(G, node_size=3)
     plt.savefig("./load/networkx_after_remove.png")
 
-    session["load_step"] = True
     return jsonify(before=before, after=after,before_path="/load/networkx_before_remove.png", after_path="load/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
@@ -84,9 +78,6 @@ def saveWalks(walks):
 #=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['GET'])
 def embedding():
-    if not "load_step" in session:
-        return jsonify(err="405",msg = "Please make /load step first")
-
     G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
      # Precompute probabilities and generate walks
@@ -97,43 +88,41 @@ def embedding():
     model = node2vec.fit(window=10, min_count=1, batch_words=4)
 
     # Save the model into
-    fname = "./embedding/test_embedded_vectors_model.kv"
+    fname = "model.kv"
     path = get_tmpfile(fname)
     model.wv.save(path)
 
-    session["embedding_step"] = True
-    return jsonify(res = "walks saved successfully", path="/embedding/test_embedded_vectors_model.kv")
+    return jsonify(res = "walks saved successfully", path="/embedding/walks.txt")
 
 #=============================================== pca route ================================================#
 @app.route("/pca", methods=['GET'])
 def pca():
-    if not "embedding_step" in session:
-        return jsonify(err="405",msg = "Please make /embedding step first")
+    skip = True
+    for algo in all_algorithms:
+        if not os.path.isfile("./pca/" + algo + ".png"):
+            skip = False
 
-    # Taking G from memory
-    G = networkx.read_multiline_adjlist("./load/graph.adjlist")
+    if not skip:
+        # Taking G from memory
+        G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
-    # Taking Memory from memory
-    fname = "./embedding/test_embedded_vectors_model.kv"
-    path = get_tmpfile(fname)
-    model = KeyedVectors.load(path, mmap='r')
+        # Taking Memory from memory
+        fname = "model.kv"
+        path = get_tmpfile(fname)
+        model = KeyedVectors.load(path, mmap='r')
 
-    #PCA from 64D to 3D
-    plotter = Plotter.Plotter(G, model)
-    all = plotter.getAll()
+        #PCA from 64D to 3D
+        plotter = Plotter.Plotter(G, model)
+        all = plotter.getAll()
 
-    for (name, plot) in all:
-        plot.savefig("./pca/" + name + ".png")
-        app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
+        for (name, plot) in all:
+            plot.savefig("./pca/" + name + ".png")
+            app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
 
-    session["pca_step"] = True
-    return jsonify(res = "pca completed and saved in image", path="/pca/BaseGraph.png")
+    return jsonify(res = "pca completed and saved in image", path="/pca/base.png")
 
 #=============================================== result route ================================================#
 @app.route("/results/<string:algorithms>", methods=['GET'])
 
 def results(algorithms):
-    if not "pca_step" in session:
-        return jsonify(err="405",msg = "Please make /pca step first")
-
-    return jsonify(algorithms=algorithms, path="./pca/" + algorithms +".png")
+    return jsonify(algorithms=algorithms, path=" /pca/" + algorithms +".png")
