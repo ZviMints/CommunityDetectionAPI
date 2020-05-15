@@ -6,3 +6,4 @@ flask_session
 node2vec
 numpy
 sklearn
+gensim

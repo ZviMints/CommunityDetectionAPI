@@ -3,6 +3,7 @@ from flask_session import Session
 from flask import jsonify
 from tempfile import mkdtemp
 import networkx
+from gensim.models import KeyedVectors
 from gensim.test.utils import get_tmpfile
 from networkx.readwrite import json_graph
 import matplotlib.pyplot as plt
@@ -101,7 +102,7 @@ def embedding():
     model.wv.save(path)
 
     session["embedding_step"] = True
-    return jsonify(res = "walks saved successfully" path="/embedding/test_embedded_vectors_model.kv")
+    return jsonify(res = "walks saved successfully", path="/embedding/test_embedded_vectors_model.kv")
 
 #=============================================== pca route ================================================#
 @app.route("/pca", methods=['GET'])
