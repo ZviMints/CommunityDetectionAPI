@@ -3,8 +3,10 @@ from flask_session import Session
 from flask import jsonify
 from tempfile import mkdtemp
 import networkx
+from gensim.test.utils import get_tmpfile
 from networkx.readwrite import json_graph
 import matplotlib.pyplot as plt
+from node2vec import Node2Vec
 
 app = Flask(__name__)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -74,17 +76,26 @@ def saveWalks(walks):
             f.write("  ")
         f.write("\n")
     f.close()
+
 #=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['GET'])
 def embedding():
     if not "load_step" in session:
         return jsonify(err="405 Method Not Allowed - Please make /load step first")
 
-    G = nx.read_multiline_adjlist("./load/graph.adjlist")
+    G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
      # Precompute probabilities and generate walks
     node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
     saveWalks(list(node2vec.walks))
+
+    # Embed nodes
+    model = node2vec.fit(window=10, min_count=1, batch_words=4)
+
+    # Save the model into
+    fname = "./embedding/test_embedded_vectors_model.kv"
+    path = get_tmpfile(fname)
+    model.wv.save(path)
 
     session["embedding_step"] = True
     return jsonify("walks saved successfully on path embedding/walks.txt")

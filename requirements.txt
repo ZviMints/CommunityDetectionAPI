@@ -3,3 +3,4 @@ gunicorn
 networkx
 matplotlib
 flask_session
+node2vec
