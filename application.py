@@ -1,4 +1,4 @@
-from flask import Flask, session
+from flask import Flask, session, request
 from flask_session import Session
 from flask import jsonify
 from tempfile import mkdtemp
@@ -120,8 +120,20 @@ def pca():
 
     #PCA from 64D to 3D
     plotter = Plotter.Plotter(G, model)
-    plot = plotter.BaseGraph.getPlot()
-    plot.savefig("./pca/BaseGraph.png")
+    all = plotter.getAll()
+
+    for (name, plot) in all:
+        plot.savefig("./pca/" + name + ".png")
+        app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
 
     session["pca_step"] = True
     return jsonify(res = "pca completed and saved in image", path="/pca/BaseGraph.png")
+
+#=============================================== result route ================================================#
+@app.route("/results/<string:algorithms>", methods=['GET'])
+
+def results(algorithms):
+    if not "pca_step" in session:
+        return jsonify(err="405",msg = "Please make /pca step first")
+
+    return jsonify(algorithms=algorithms, path="./pca/" + algorithms +".png")
