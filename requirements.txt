@@ -1,3 +1,4 @@
-flask>=1.0
-gunicorn>=19.5.0
-networkx>=1.9
+flask
+gunicorn
+networkx
+matplotlib

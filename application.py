@@ -1,13 +1,11 @@
 import logging
 
-from threading import Thread
-
 from flask import Flask, render_template
 from flask import jsonify
 
+import networkx
 from networkx.readwrite import json_graph
 
-import networkx
 import matplotlib
 import matplotlib.pyplot as plt
 
