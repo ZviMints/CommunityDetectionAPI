@@ -121,4 +121,6 @@ def pca():
     plotter = Plotter.Plotter(G, model)
     plot = plotter.BaseGraph.getPlot()
     plot.savefig("./pca/BaseGraph.png")
+
+    session["pca_step"] = True
     return jsonify(res = "pca completed and saved in image", path="/pca/BaseGraph.png")

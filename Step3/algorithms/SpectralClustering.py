@@ -90,7 +90,7 @@ class SpectralClustering:
         fig = plt.figure(dpi=120, figsize=(8.0, 5.0))
         ax = fig.add_subplot(projection='3d')
 
-        #drow all the nodes in the grapg
+        #drow all the nodes in the graph
         ax.scatter(self.vectors_3dim[:, 0], self.vectors_3dim[:, 1], self.vectors_3dim[:, 2], s=1)
 
         #drow the clusters
