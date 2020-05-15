@@ -15,13 +15,10 @@ Session(app)
 app.secret_key = "super secret key"
 
 # Zvi Mints And Eilon Tsadok
+#=============================================== / route ================================================#
 @app.route("/")
 def index():
     return "Server is UP"
-
-@app.route("/graph")
-def graph():
-    return jsonify("this is text that i get from backend via Flask framework (here will be the graph)")
 
 #=============================================== load route ================================================#
 @app.route("/load/<string:dataset>", methods=['GET'])
@@ -36,15 +33,13 @@ def load(dataset):
     else:
            return jsonify(err="405 Method Not Allowed - Invalid JSON file name")
 
-    session["dataset"] = dataset
-    app.logger.debug('dataset saved successfully on session')
 
     # Generate picture of networkx
     # networkx.draw(G, node_size=1)
     # plt.savefig("./load/results/networkx_before_remove.png")
-    app.logger.debug('loaded dataset with %s nodes before remove' % len(G.nodes()))
 
     # write json formatted data
+    app.logger.debug('loaded dataset with %s nodes before remove' % len(G.nodes()))
     before = json_graph.node_link_data(G)  # node-link format to serialize
 
     # After Remove
@@ -53,20 +48,18 @@ def load(dataset):
             for node in component:
                 G.remove_node(node)
 
-    app.logger.debug('loaded dataset with %s nodes after remove' % len(G.nodes()))
-
     # write json formatted data
+    app.logger.debug('loaded dataset with %s nodes after remove' % len(G.nodes()))
     after = json_graph.node_link_data(G)  # node-link format to serialize
 
     # Save after remove graph
     networkx.write_multiline_adjlist(G, "./load/graph.adjlist")
-    session["G"] = G
-    app.logger.debug('G saved successfully on session')
 
     # Plotting
     networkx.draw(G, node_size=3)
     plt.savefig("./load/networkx_after_remove.png")
 
+    session["load_step"] = True
     return jsonify(before=before, after=after)
 
 #=============================================== embedding route ================================================#
@@ -80,24 +73,18 @@ def saveWalks(walks):
             f.write(word)
             f.write("  ")
         f.write("\n")
-
-    session["walks"] = f
-    app.logger.debug('walks saved successfully on session')
     f.close()
 #=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['GET'])
 def embedding():
-    if not "dataset" or "G" in session:
+    if not "load_step" in session:
         return jsonify(err="405 Method Not Allowed - Please make /load step first")
 
-    G = session["G"][0]
-    
+    G = nx.read_multiline_adjlist("./load/graph.adjlist")
+
      # Precompute probabilities and generate walks
     node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
     saveWalks(list(node2vec.walks))
 
-    model = node2vec.fit(window=10, min_count=1, batch_words=4)
-    session["mode.wv"] = model.wv
-    app.logger.debug('mode.wv saved successfully on session')
-
-    return jsonify("model& walks saved successfully on path embedding/walks.txt")
+    session["embedding_step"] = True
+    return jsonify("walks saved successfully on path embedding/walks.txt")
