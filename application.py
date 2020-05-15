@@ -8,6 +8,9 @@ from networkx.readwrite import json_graph
 import matplotlib.pyplot as plt
 from node2vec import Node2Vec
 
+from Step3 import Plotter
+
+
 app = Flask(__name__)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
@@ -33,7 +36,7 @@ def load(dataset):
     elif dataset == "pan12-sexual-predator-identification-test-corpus-2012-05-17":
         G = networkx.read_multiline_adjlist("./load/test_networkxBeforeRemove.adjlist")
     else:
-           return jsonify(err="405 Method Not Allowed - Invalid JSON file name")
+           return jsonify(err="405", msg = "Invalid JSON file name")
 
 
     # Generate picture of networkx
@@ -62,7 +65,7 @@ def load(dataset):
     plt.savefig("./load/networkx_after_remove.png")
 
     session["load_step"] = True
-    return jsonify(before=before, after=after)
+    return jsonify(before=before, after=after,before_path="/load/networkx_before_remove.png", after_path="load/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
 def saveWalks(walks):
@@ -81,7 +84,7 @@ def saveWalks(walks):
 @app.route("/embedding", methods=['GET'])
 def embedding():
     if not "load_step" in session:
-        return jsonify(err="405 Method Not Allowed - Please make /load step first")
+        return jsonify(err="405",msg = "Please make /load step first")
 
     G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
@@ -98,4 +101,24 @@ def embedding():
     model.wv.save(path)
 
     session["embedding_step"] = True
-    return jsonify("walks saved successfully on path embedding/walks.txt")
+    return jsonify(res = "walks saved successfully" path="/embedding/test_embedded_vectors_model.kv")
+
+#=============================================== pca route ================================================#
+@app.route("/pca", methods=['GET'])
+def pca():
+    if not "embedding_step" in session:
+        return jsonify(err="405",msg = "Please make /embedding step first")
+
+    # Taking G from memory
+    G = networkx.read_multiline_adjlist("./load/graph.adjlist")
+
+    # Taking Memory from memory
+    fname = "./embedding/test_embedded_vectors_model.kv"
+    path = get_tmpfile(fname)
+    model = KeyedVectors.load(path, mmap='r')
+
+    #PCA from 64D to 3D
+    plotter = Plotter.Plotter(G, model)
+    plot = plotter.BaseGraph.getPlot()
+    plot.savefig("./pca/BaseGraph.png")
+    return jsonify(res = "pca completed and saved in image", path="/pca/BaseGraph.png")
