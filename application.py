@@ -29,15 +29,17 @@ def load(dataset):
     # Making G (networkx)
     if dataset == "pan12-sexual-predator-identification-training-corpus-2012-05-01":
         G = networkx.read_multiline_adjlist("./load/train_networkxBeforeRemove.adjlist")
+
     elif dataset == "pan12-sexual-predator-identification-test-corpus-2012-05-17":
         G = networkx.read_multiline_adjlist("./load/test_networkxBeforeRemove.adjlist")
+
     else:
            return jsonify(err="405", msg = "Invalid JSON file name")
 
 
     # Generate picture of networkx
     # networkx.draw(G, node_size=1)
-    # plt.savefig("./load/results/networkx_before_remove.png")
+    # plt.savefig("./load/networkx_before_remove.png")
 
     # write json formatted data
     app.logger.debug('loaded dataset with %s nodes before remove' % len(G.nodes()))
@@ -110,15 +112,16 @@ def pca():
         fname = "model.kv"
         path = get_tmpfile(fname)
         model = KeyedVectors.load(path, mmap='r')
-
+        app.logger.debug("1")
         #PCA from 64D to 3D
         plotter = Plotter.Plotter(G, model)
+        app.logger.debug("2")
         all = plotter.getAll()
-
-        for (name, plot) in all:
+        app.logger.debug("3")
+        for name, plot in all.items():
             plot.savefig("./pca/" + name + ".png")
             app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
-
+        app.logger.debug("4")
     return jsonify(res = "pca completed and saved in image", path="/pca/base.png")
 
 #=============================================== result route ================================================#

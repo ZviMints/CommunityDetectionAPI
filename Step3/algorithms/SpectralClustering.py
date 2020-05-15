@@ -49,7 +49,7 @@ class SpectralClustering:
     def __init__(self, vectors_3dim, color):
         self.vectors_3dim = vectors_3dim
         self.color = color
-        k = self.find_elbow()
+        k = 16#self.find_elbow()
         self.sc = SpectralClusteringAlgorithm(n_clusters=k, assign_labels="discretize",n_init=10, random_state=0)
         self.sc.fit_predict(self.vectors_3dim)
         # create the centers of the clusters
