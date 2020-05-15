@@ -9,9 +9,8 @@ from node2vec import Node2Vec
 from Step3 import Plotter
 import os.path
 
-all_algorithms =["base","kmeans","spectral","connected","kmeans+spectra","kmeans+spectral",
-                 "connected+kmeans","kmeans+connected","connected+spectral",
-                 "spectral+connected","connected+kmeans+spectral"]
+all_algorithms =["base","kmeans","spectral","connected","kmeans+spectral",
+                 "connected+kmeans","connected+spectral","connected+kmeans+spectral"]
 
 app = Flask(__name__)
 
@@ -24,6 +23,11 @@ def index():
 #=============================================== load route ================================================#
 @app.route("/load/<string:dataset>", methods=['GET'])
 def load(dataset):
+    skip = True
+    if not os.path.isfile("./load/networkx_after_remove.png"): #or
+        #not os.path.isfile("./load/networkx_before_remove.png")):
+        skip = False
+
     app.logger.info('got ./load request')
 
     # Making G (networkx)
@@ -57,10 +61,11 @@ def load(dataset):
 
     # Save after remove graph
     networkx.write_multiline_adjlist(G, "./load/graph.adjlist")
+    if not skip:
+        # Plotting
+        networkx.draw(G, node_size=3)
 
-    # Plotting
-    networkx.draw(G, node_size=3)
-    plt.savefig("./load/networkx_after_remove.png")
+        plt.savefig("./load/networkx_after_remove.png")
 
     return jsonify(before=before, after=after,before_path="/load/networkx_before_remove.png", after_path="load/networkx_after_remove.png")
 
@@ -80,19 +85,23 @@ def saveWalks(walks):
 #=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['GET'])
 def embedding():
-    G = networkx.read_multiline_adjlist("./load/graph.adjlist")
+    skip = True
+    if not os.path.isfile("./embedding/walks.txt"):
+        skip = False
+    if not skip:
+        G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
-     # Precompute probabilities and generate walks
-    node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
-    saveWalks(list(node2vec.walks))
+         # Precompute probabilities and generate walks
+        node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
+        saveWalks(list(node2vec.walks))
 
-    # Embed nodes
-    model = node2vec.fit(window=10, min_count=1, batch_words=4)
+        # Embed nodes
+        model = node2vec.fit(window=10, min_count=1, batch_words=4)
 
-    # Save the model into
-    fname = "model.kv"
-    path = get_tmpfile(fname)
-    model.wv.save(path)
+        # Save the model into
+        fname = "model.kv"
+        path = get_tmpfile(fname)
+        model.wv.save(path)
 
     return jsonify(res = "walks saved successfully", path="/embedding/walks.txt")
 
@@ -112,16 +121,16 @@ def pca():
         fname = "model.kv"
         path = get_tmpfile(fname)
         model = KeyedVectors.load(path, mmap='r')
-        app.logger.debug("1")
+
+
         #PCA from 64D to 3D
         plotter = Plotter.Plotter(G, model)
-        app.logger.debug("2")
         all = plotter.getAll()
-        app.logger.debug("3")
+
         for name, plot in all.items():
             plot.savefig("./pca/" + name + ".png")
             app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
-        app.logger.debug("4")
+
     return jsonify(res = "pca completed and saved in image", path="/pca/base.png")
 
 #=============================================== result route ================================================#
