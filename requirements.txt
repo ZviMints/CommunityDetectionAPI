@@ -2,3 +2,4 @@ flask
 gunicorn
 networkx
 matplotlib
+flask_session
