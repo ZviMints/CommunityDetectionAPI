@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from node2vec import Node2Vec
 from Step3 import Plotter
 import os.path
+import os
 
 # Configurations
 all_algorithms =["base","kmeans","spectral","connected","kmeans+spectral","connected+kmeans","connected+spectral","connected+kmeans+spectral"]
@@ -28,7 +29,7 @@ def load():
     # If use server data or do all process
     useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
-    prefix = "/load/ " + dataset
+    prefix = "/load/" + dataset
 
     skip = True
     if not os.path.isfile("." + prefix + "/networkx_before_remove.png"):  # and os.path.isfile("." + prefix + dataset + "/networkx_after_remove.png"):
@@ -69,6 +70,8 @@ def load():
     after = json_graph.node_link_data(G)  # node-link format to serialize
 
     # Save after remove graph
+    if not os.path.exists("." + prefix):
+        os.makedirs("." + prefix)
     networkx.write_multiline_adjlist(G, "." + prefix + "/graph.adjlist")
     if not skip:
         # Plotting
@@ -78,8 +81,8 @@ def load():
     return jsonify(before=before, after=after,before_path= prefix + "/networkx_before_remove.png", after_path = prefix + "/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
-def saveWalks(walks):
-    f = open("./embedding/walks.txt", "w+")
+def saveWalks(walks,dataset):
+    f = open("./embedding/" + dataset +"/walks.txt", "w+")
     row = 1
     for sentence in walks:
         f.write("row %s:    " % str(row))
@@ -109,7 +112,7 @@ def embedding():
 
          # Precompute probabilities and generate walks
         node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
-        saveWalks(list(node2vec.walks))
+        saveWalks(list(node2vec.walks),dataset)
 
         # Embed nodes
         model = node2vec.fit(window=10, min_count=1, batch_words=4)
@@ -130,6 +133,9 @@ def pca():
     useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
     prefix = "/pca/" + dataset
+
+    if not os.path.exists("." + prefix):
+        os.makedirs("." + prefix)
 
     skip = True
     for algo in all_algorithms:
