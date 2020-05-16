@@ -34,9 +34,7 @@ def load():
     if not os.path.isfile("./load/ " + dataset + "/networkx_before_remove.png") and os.path.isfile("./load/ " + dataset + "/networkx_after_remove.png"):
         skip = False
 
-    if useServerData:
-        skip = True
-    else:
+    if not useServerData:
         skip = False
 
     app.logger.info('got /load request with skip = %s and dataset = %s' % (skip,dataset))
@@ -102,13 +100,9 @@ def embedding():
     # Prefix for saving information
     prefix = "/embedding/ " + dataset
 
-    if useServerData:
-        skip = True
-    else:
+    if not useServerData:
         skip = False
 
-    if useServerData:
-        skip = True
     app.logger.info('got /embedding request with skip = %s and dataset = %s' % (skip,dataset))
 
     if not skip:
@@ -143,22 +137,19 @@ def pca():
         if not os.path.isfile("./pca/" + algo + ".png"):
             skip = False
 
-    if useServerData:
-        skip = True
-    else:
+    if not useServerData:
         skip = False
 
     app.logger.info('got /pca request with skip = %s and dataset = %s' % (skip,dataset))
 
     if not skip:
         # Taking G from memory
-        G = networkx.read_multiline_adjlist("./load/graph.adjlist")
+        G = networkx.read_multiline_adjlist("./load/" + dataset + "graph.adjlist")
 
         # Taking Memory from memory
         fname = "model.kv"
         path = get_tmpfile(fname)
         model = KeyedVectors.load(path, mmap='r')
-
 
         #PCA from 64D to 3D
         plotter = Plotter.Plotter(G, model)
