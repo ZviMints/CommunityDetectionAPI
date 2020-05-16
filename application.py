@@ -31,7 +31,7 @@ def load():
     prefix = "/load/ " + dataset
 
     skip = True
-    if not os.path.isfile("./load/ " + dataset + "/networkx_before_remove.png") and os.path.isfile("./load/ " + dataset + "/networkx_after_remove.png"):
+    if not os.path.isfile("." + prefix + "/networkx_before_remove.png"):  # and os.path.isfile("." + prefix + dataset + "/networkx_after_remove.png"):
         skip = False
 
     if not useServerData:
@@ -49,10 +49,10 @@ def load():
     else:
            return jsonify(err="405", msg = "Invalid JSON file name")
 
-    if not skip:
-        # Plotting
-        networkx.draw(G, node_size=1)
-        plt.savefig("." + prefix + "/networkx_before_remove.png")
+    # if not skip:
+    #    # Plotting
+    #    networkx.draw(G, node_size=1)
+    #    plt.savefig("." + prefix + "/networkx_before_remove.png")
 
     # write json formatted data
     app.logger.debug('loaded dataset with %s nodes before remove' % len(G.nodes()))
@@ -69,13 +69,13 @@ def load():
     after = json_graph.node_link_data(G)  # node-link format to serialize
 
     # Save after remove graph
-    networkx.write_multiline_adjlist(G, prefix + "graph.adjlist")
+    networkx.write_multiline_adjlist(G, "." + prefix + "/graph.adjlist")
     if not skip:
         # Plotting
         networkx.draw(G, node_size=3)
         plt.savefig("." + prefix + "/networkx_after_remove.png")
 
-    return jsonify(before=before, after=after,before_path= prefix + "/networkx_before_remove.png", after_path=prefix + "/networkx_after_remove.png")
+    return jsonify(before=before, after=after,before_path= prefix + "/networkx_before_remove.png", after_path = prefix + "/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
 def saveWalks(walks):
@@ -90,7 +90,6 @@ def saveWalks(walks):
         f.write("\n")
     f.close()
 
-#=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['POST'])
 def embedding():
     # Getting datset from request
@@ -106,7 +105,7 @@ def embedding():
     app.logger.info('got /embedding request with skip = %s and dataset = %s' % (skip,dataset))
 
     if not skip:
-        G = networkx.read_multiline_adjlist("./load/graph.adjlist")
+        G = networkx.read_multiline_adjlist("./load/" + dataset + "/graph.adjlist")
 
          # Precompute probabilities and generate walks
         node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
@@ -134,7 +133,7 @@ def pca():
 
     skip = True
     for algo in all_algorithms:
-        if not os.path.isfile("./pca/" + algo + ".png"):
+        if not os.path.isfile("." + prefix + "/" + algo + ".png"):
             skip = False
 
     if not useServerData:
@@ -144,7 +143,7 @@ def pca():
 
     if not skip:
         # Taking G from memory
-        G = networkx.read_multiline_adjlist("./load/" + dataset + "graph.adjlist")
+        G = networkx.read_multiline_adjlist("./load/" + dataset + "/graph.adjlist")
 
         # Taking Memory from memory
         fname = "model.kv"
@@ -156,7 +155,7 @@ def pca():
         all = plotter.getAll()
 
         for name, plot in all.items():
-            plot.savefig("." + prefix + name + ".png")
+            plot.savefig("." + prefix + "/" + name + ".png")
             app.logger.debug("saved %s in .%s%s.png" % (name,prefix, name))
 
     return jsonify(res = "pca completed and saved in image", path = prefix + "/base.png")
@@ -168,6 +167,7 @@ def results():
     dataset = request.get_json()["dataset"]
     # Getting algorithms from request
     algorithms = request.get_json()["algorithms"]
+
     app.logger.info('got /results request with dataset = %s and algorithms = %s' % (dataset,algorithms))
 
     return jsonify(path=  "/pca/" + dataset + "/" + algorithms + ".png")
