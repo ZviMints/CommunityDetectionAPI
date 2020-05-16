@@ -1,4 +1,4 @@
-
+import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -23,10 +23,24 @@ def ConnectedComponents_center_radius(set_3dim_vec):
             max_dist[i] = max(max_dist[i],dist[i])
     return (center,max(max_dist[0],max_dist[1],max_dist[2])/2)
 
+def make_vec3D_connected_components(G, vectors_3dim):
+    # makeDictionary_Id_vector
+    id2vec_dic = {}
+    for id, vec in zip(G.nodes(),vectors_3dim):
+        id2vec_dic[id] = vec
+    vec3D_connected_components = []
+    for group in list(nx.connected_components(G)):
+        vec3D_group = []
+        for id in group:
+            vec3D_group.append(id2vec_dic[id])
+        vec3D_connected_components.append(vec3D_group)
+    return vec3D_connected_components
+
 
 
 class ConnectedComponents:
-    def __init__(self, vectors_3dim, sets_vectors_3dim, color):
+    def __init__(self, vectors_3dim, G, color):
+        sets_vectors_3dim = make_vec3D_connected_components(G, vectors_3dim)
         self.sets_vectors_3dim = sets_vectors_3dim
         self.vectors_3dim = vectors_3dim
         self.color = color
@@ -64,3 +78,5 @@ class ConnectedComponents:
         ax.set_zlabel('Z Label')
 
         return plt
+
+
