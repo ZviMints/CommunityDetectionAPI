@@ -9,8 +9,8 @@ from node2vec import Node2Vec
 from Step3 import Plotter
 import os.path
 
-all_algorithms =["base","kmeans","spectral","connected","kmeans+spectral",
-                 "connected+kmeans","connected+spectral","connected+kmeans+spectral"]
+# Configurations
+all_algorithms =["base","kmeans","spectral","connected","kmeans+spectral","connected+kmeans","connected+spectral","connected+kmeans+spectral"]
 
 app = Flask(__name__)
 
@@ -21,14 +21,22 @@ def index():
     return "Server is UP"
 
 #=============================================== load route ================================================#
-@app.route("/load/<string:dataset>", methods=['GET'])
-def load(dataset):
+@app.route("/load/<string:dataset>", methods=['POST'])
+def load():
+    # Getting datset from request
+    dataset = request.form["dataset"]
+    # If use server data or do all process
+    useServerData = request.form["useServerData"]
+    # Prefix for saving information
+    prefix = "/load/ " + dataset
+
     skip = True
-    if not os.path.isfile("./load/networkx_after_remove.png"): #or
-        #not os.path.isfile("./load/networkx_before_remove.png")):
+    if not os.path.isfile("./load/ " + dataset + "/networkx_before_remove.png") and os.path.isfile("./load/ " + dataset + "/networkx_after_remove.png"):
         skip = False
 
-    app.logger.info('got ./load request')
+    if useServerData:
+        skip = True
+    app.logger.info('got ./load request with skip = %s' % skip)
 
     # Making G (networkx)
     if dataset == "pan12-sexual-predator-identification-training-corpus-2012-05-01":
@@ -40,10 +48,10 @@ def load(dataset):
     else:
            return jsonify(err="405", msg = "Invalid JSON file name")
 
-
-    # Generate picture of networkx
-    # networkx.draw(G, node_size=1)
-    # plt.savefig("./load/networkx_before_remove.png")
+    if not skip:
+        # Plotting
+        networkx.draw(G, node_size=1)
+        plt.savefig("." + prefix + "/networkx_before_remove.png")
 
     # write json formatted data
     app.logger.debug('loaded dataset with %s nodes before remove' % len(G.nodes()))
@@ -60,14 +68,13 @@ def load(dataset):
     after = json_graph.node_link_data(G)  # node-link format to serialize
 
     # Save after remove graph
-    networkx.write_multiline_adjlist(G, "./load/graph.adjlist")
+    networkx.write_multiline_adjlist(G, prefix + "graph.adjlist")
     if not skip:
         # Plotting
         networkx.draw(G, node_size=3)
+        plt.savefig("." + prefix + "/networkx_after_remove.png")
 
-        plt.savefig("./load/networkx_after_remove.png")
-
-    return jsonify(before=before, after=after,before_path="/load/networkx_before_remove.png", after_path="load/networkx_after_remove.png")
+    return jsonify(before=before, after=after,before_path= prefix + "/networkx_before_remove.png", after_path=prefix + "/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
 def saveWalks(walks):
@@ -83,11 +90,24 @@ def saveWalks(walks):
     f.close()
 
 #=============================================== main embedding route ================================================#
-@app.route("/embedding", methods=['GET'])
+@app.route("/embedding", methods=['POST'])
 def embedding():
+
+    # Getting datset from request
+    dataset = request.form["dataset"]
+    # If use server data or do all process
+    useServerData = request.form["useServerData"]
+    # Prefix for saving information
+    prefix = "/embedding/ " + dataset
+
     skip = True
-    if not os.path.isfile("./embedding/walks.txt"):
+    if not os.path.isfile("." + prefix + "/walks.txt"):
         skip = False
+
+    if useServerData:
+        skip = True
+    app.logger.info('got ./embedding request with skip = %s' % skip)
+
     if not skip:
         G = networkx.read_multiline_adjlist("./load/graph.adjlist")
 
@@ -103,15 +123,27 @@ def embedding():
         path = get_tmpfile(fname)
         model.wv.save(path)
 
-    return jsonify(res = "walks saved successfully", path="/embedding/walks.txt")
+    return jsonify(res = "walks saved successfully", path = prefix + "/walks.txt")
 
 #=============================================== pca route ================================================#
-@app.route("/pca", methods=['GET'])
+@app.route("/pca", methods=['POST'])
 def pca():
+
+    # Getting datset from request
+    dataset = request.form["dataset"]
+    # If use server data or do all process
+    useServerData = request.form["useServerData"]
+    # Prefix for saving information
+    prefix = "/pca/" + dataset
+
     skip = True
     for algo in all_algorithms:
         if not os.path.isfile("./pca/" + algo + ".png"):
             skip = False
+
+    if useServerData:
+        skip = True
+    app.logger.info('got ./pca request with skip = %s' % skip)
 
     if not skip:
         # Taking G from memory
@@ -128,13 +160,17 @@ def pca():
         all = plotter.getAll()
 
         for name, plot in all.items():
-            plot.savefig("./pca/" + name + ".png")
-            app.logger.debug('%s saved in "./pca/" + %s + ".png"' % (name, name))
+            plot.savefig("." + prefix + name + ".png")
+            app.logger.debug("saved %s in .%s%s.png" % (name,prefix, name))
 
-    return jsonify(res = "pca completed and saved in image", path="/pca/base.png")
+    return jsonify(res = "pca completed and saved in image", path = prefix + "/base.png")
 
 #=============================================== result route ================================================#
-@app.route("/results/<string:algorithms>", methods=['GET'])
-
+@app.route("/results", methods=['POST'])
 def results(algorithms):
-    return jsonify(algorithms=algorithms, path=" /pca/" + algorithms +".png")
+    # Getting datset from request
+    dataset = request.form["dataset"]
+    # Getting algorithms from request
+    algorithms = request.form["algorithms"]
+
+    return jsonify(algorithms=algorithms, path=  "/pca/" + dataset + "/" + algorithms + ".png")
