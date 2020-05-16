@@ -71,3 +71,14 @@ class Plotter:
         algorithms["connected+spectral"] = self.Combined.getPlot("spectral+connected")
         algorithms["connected+kmeans+spectral"] = self.Combined.getPlot("kmeans+spectral+connected")
         return algorithms
+
+    def SaveAll(self,prefix):
+        self.BaseGraph.getPlot().savefig("." + prefix + "/base.png")
+        self.kmeans.getPlot().savefig("." + prefix + "/kmeans.png")
+        self.spectral.getPlot().savefig("." + prefix + "/spectral.png")
+        self.cc.getPlot().savefig("." + prefix + "/connected.png")
+        self.Combined.getPlot("kmeans+spectral").savefig("." + prefix + "/kmeans+spectral.png")
+        self.Combined.getPlot("kmeans+connected").savefig("." + prefix + "/connected+kmeans.png")
+        self.Combined.getPlot("spectral+connected").savefig("." + prefix + "/connected+spectral.png")
+        self.BaseGraph.getPlot().savefig("." + prefix + "/base.png")
+        self.Combined.getPlot("kmeans+spectral+connected").savefig("." + prefix + "/connected+kmeans+spectral.png")

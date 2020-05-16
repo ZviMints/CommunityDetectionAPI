@@ -164,11 +164,7 @@ def pca():
 
         #PCA from 64D to 3D
         plotter = Plotter.Plotter(G, model)
-        all = plotter.getAll()
-
-        for name, plot in all.items():
-            plot.savefig("." + prefix + "/" + name + ".png")
-            app.logger.debug("saved %s in .%s%s.png" % (name,prefix, name))
+        plotter.SaveAll(prefix)
 
     return jsonify(res = "pca completed and saved in image", path = prefix + "/base.png")
 
