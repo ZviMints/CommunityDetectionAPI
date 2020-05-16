@@ -32,7 +32,7 @@ def load():
     prefix = "/load/" + dataset
 
     skip = True
-    if not os.path.isfile("." + prefix + "/networkx_before_remove.png"):  # and os.path.isfile("." + prefix + dataset + "/networkx_after_remove.png"):
+    if not os.path.isfile("." + prefix + "/networkx_after_remove.png"):  # and os.path.isfile("." + prefix + dataset + "/networkx_before_remove.png"):
         skip = False
 
     if not useServerData:
@@ -103,6 +103,10 @@ def embedding():
     useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
     prefix = "/embedding/ " + dataset
+
+    skip = True
+    if not os.path.isfile("." + prefix + "/walks.txt"):
+        skip = False
 
     if not useServerData:
         skip = False
