@@ -21,12 +21,12 @@ def index():
     return "Server is UP"
 
 #=============================================== load route ================================================#
-@app.route("/load/<string:dataset>", methods=['POST'])
+@app.route("/load", methods=['POST'])
 def load():
     # Getting datset from request
-    dataset = request.form["dataset"]
+    dataset = request.get_json()["dataset"]
     # If use server data or do all process
-    useServerData = request.form["useServerData"]
+    useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
     prefix = "/load/ " + dataset
 
@@ -36,7 +36,10 @@ def load():
 
     if useServerData:
         skip = True
-    app.logger.info('got ./load request with skip = %s' % skip)
+    else:
+        skip = False
+
+    app.logger.info('got /load request with skip = %s and dataset = %s' % (skip,dataset))
 
     # Making G (networkx)
     if dataset == "pan12-sexual-predator-identification-training-corpus-2012-05-01":
@@ -92,21 +95,21 @@ def saveWalks(walks):
 #=============================================== main embedding route ================================================#
 @app.route("/embedding", methods=['POST'])
 def embedding():
-
     # Getting datset from request
-    dataset = request.form["dataset"]
+    dataset = request.get_json()["dataset"]
     # If use server data or do all process
-    useServerData = request.form["useServerData"]
+    useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
     prefix = "/embedding/ " + dataset
 
-    skip = True
-    if not os.path.isfile("." + prefix + "/walks.txt"):
+    if useServerData:
+        skip = True
+    else:
         skip = False
 
     if useServerData:
         skip = True
-    app.logger.info('got ./embedding request with skip = %s' % skip)
+    app.logger.info('got /embedding request with skip = %s and dataset = %s' % (skip,dataset))
 
     if not skip:
         G = networkx.read_multiline_adjlist("./load/graph.adjlist")
@@ -128,11 +131,10 @@ def embedding():
 #=============================================== pca route ================================================#
 @app.route("/pca", methods=['POST'])
 def pca():
-
     # Getting datset from request
-    dataset = request.form["dataset"]
+    dataset = request.get_json()["dataset"]
     # If use server data or do all process
-    useServerData = request.form["useServerData"]
+    useServerData = request.get_json()["useServerData"]
     # Prefix for saving information
     prefix = "/pca/" + dataset
 
@@ -143,7 +145,10 @@ def pca():
 
     if useServerData:
         skip = True
-    app.logger.info('got ./pca request with skip = %s' % skip)
+    else:
+        skip = False
+
+    app.logger.info('got /pca request with skip = %s and dataset = %s' % (skip,dataset))
 
     if not skip:
         # Taking G from memory
@@ -167,10 +172,11 @@ def pca():
 
 #=============================================== result route ================================================#
 @app.route("/results", methods=['POST'])
-def results(algorithms):
+def results():
     # Getting datset from request
-    dataset = request.form["dataset"]
+    dataset = request.get_json()["dataset"]
     # Getting algorithms from request
-    algorithms = request.form["algorithms"]
+    algorithms = request.get_json()["algorithms"]
+    app.logger.info('got /results request with dataset = %s and algorithms = %s' % (dataset,algorithms))
 
-    return jsonify(algorithms=algorithms, path=  "/pca/" + dataset + "/" + algorithms + ".png")
+    return jsonify(path=  "/pca/" + dataset + "/" + algorithms + ".png")
