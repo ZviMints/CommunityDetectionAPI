@@ -81,7 +81,9 @@ def load():
     return jsonify(before=before, after=after,before_path= prefix + "/networkx_before_remove.png", after_path = prefix + "/networkx_after_remove.png")
 
 #=============================================== embedding route ================================================#
-def saveWalks(walks,dataset):
+def saveWalks(walks,dataset,prefix):
+    if not os.path.exists("." + prefix):
+        os.makedirs("." + prefix)
     f = open("./embedding/" + dataset +"/walks.txt", "w+")
     row = 1
     for sentence in walks:
@@ -112,7 +114,7 @@ def embedding():
 
          # Precompute probabilities and generate walks
         node2vec = Node2Vec(G, dimensions=64, walk_length=25, num_walks=10, workers=1)
-        saveWalks(list(node2vec.walks),dataset)
+        saveWalks(list(node2vec.walks),dataset,prefix)
 
         # Embed nodes
         model = node2vec.fit(window=10, min_count=1, batch_words=4)
