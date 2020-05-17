@@ -82,3 +82,6 @@ class Plotter:
         self.Combined.getPlot("spectral+connected").savefig("." + prefix + "/connected+spectral.png")
         self.BaseGraph.getPlot().savefig("." + prefix + "/base.png")
         self.Combined.getPlot("kmeans+spectral+connected").savefig("." + prefix + "/connected+kmeans+spectral.png")
+
+    def getAllCenters(self):
+        return (self.kmeans.km.cluster_centers_,self.spectral.CenterClusterList,self.cc.component_centers)
